@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -35,7 +36,7 @@ namespace Match.Services
             {
                 Winner = false,
                 Animating = false,
-                Cards = newCards
+                Cards = newCards.ToImmutableList()
             };
         }
 
@@ -47,7 +48,7 @@ namespace Match.Services
           {
             Winner = state.Winner,
             Animating = false,
-            Cards = newCards
+            Cards = newCards.ToImmutableList()
           };
         }
 
@@ -72,7 +73,7 @@ namespace Match.Services
           {
             Winner = state.Winner,
             Animating = state.Animating,
-            Cards = newCards
+            Cards = newCards.ToImmutableList()
           };
         }
 
@@ -97,7 +98,7 @@ namespace Match.Services
               {
                 Winner = state.Winner,
                 Animating = state.Animating,
-                Cards = newCards
+                Cards = newCards.ToImmutableList()
               };
             } else {
               return new Engine
