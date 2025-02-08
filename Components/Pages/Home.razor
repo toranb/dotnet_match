@@ -1,7 +1,151 @@
 ﻿@page "/"
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
+@using Example.Models
 
-<h1>Hello, world!</h1>
+<PageTitle>Match</PageTitle>
 
-Welcome to your new app.
+<div class="max-w-2xl">
+  <div class="cards">
+      @foreach (var item in items)
+      {
+          <div @onclick="() => FlipCard(item)" class="@GetCardClasses(item)">
+            <div class="back"></div>
+            <div class="front" style="@GetCardStyles(item)"></div>
+          </div>
+      }
+  </div>
+
+  @if(winner) {
+    <div class="fixed inset-0 z-50 bg-white bg-opacity-25 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="relative z-50 bg-white rounded-lg shadow-xl w-full max-w-sm p-6 transform transition-all">
+          <div class="flex flex-col items-center gap-4">
+          <h2 class="text-2xl font-bold text-center text-gray-900">You Won!</h2>
+          <button @onclick="() => Restart()" class="mt-4 w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium">
+            New Game
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+@code {
+    private Random random = new();
+    private bool animating = false;
+    private bool winner = false;
+    private List<Card> items;
+    private List<string> cardNumbers = new() { "one", "two", "three", "four" };
+
+    protected override void OnInitialized()
+    {
+      items = NewCards();
+    }
+
+    private List<Card> NewCards()
+    {
+      var cards = cardNumbers.Distinct()
+        .SelectMany((name, index) => Enumerable.Range(1, 2)
+            .Select(i => new Card
+            {
+                Id = (index * 2) + i,
+                Name = name,
+                ImageUrl = $"/images/cards/{name}.png"
+            }))
+        .ToList();
+
+      return cards.OrderBy(x => random.Next()).ToList();
+    }
+
+    private void FlipCard(Card card)
+    {
+      if (animating) return;
+
+      Flip(card);
+      AttemptMatch();
+      CheckWinner();
+      StateHasChanged();
+
+      if (animating) {
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(1000);
+            UnFlip();
+            await InvokeAsync(StateHasChanged);
+        });
+      }
+    }
+
+    private void CheckWinner()
+    {
+      var pairedCards = items.Where(card => card.Paired).ToList();
+
+      if (pairedCards.Count == 8) {
+        winner = true;
+      }
+    }
+
+    private void UnFlip()
+    {
+      animating = false;
+
+      foreach (var item in items)
+      {
+        item.Flipped = false;
+      }
+    }
+
+    private void Flip(Card card)
+    {
+        foreach (var item in items)
+        {
+            if (card.Id == item.Id) {
+              card.Flipped = true;
+            }
+        }
+    }
+
+    private void AttemptMatch()
+    {
+      var flippedCards = items.Where(card => card.Flipped).ToList();
+
+      if (flippedCards.Count != 2) {
+        return;
+      }
+
+      var one = flippedCards[0];
+      var two = flippedCards[1];
+
+      if (one.Name == two.Name) {
+        foreach (var item in items)
+        {
+            if (one.Name == item.Name) {
+              one.Paired = true;
+              one.Flipped = false;
+              two.Paired = true;
+              two.Flipped = false;
+            }
+        }
+      } else {
+        animating = true;
+      }
+    }
+
+    private string GetCardClasses(Card card)
+    {
+      if (card.Paired) return "card found";
+      if (card.Flipped) return "card flipped";
+      return "card";
+    }
+
+    private string GetCardStyles(Card card)
+    {
+      return $"background-image: url({card.ImageUrl})";
+    }
+
+    private void Restart()
+    {
+      items = NewCards();
+      winner = false;
+    }
+}
