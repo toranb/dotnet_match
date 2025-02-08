@@ -1,11 +1,10 @@
-namespace Example.Models;
+namespace Match.Models;
 
-public class Card
+public record Card
 {
-    public int Id { get; set; }
-    public bool Flipped { get; set; }
-    public bool Paired { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public string ImageUrl { get; set; } = string.Empty;
+    public int Id { get; init; }
+    public bool Flipped { get; init; }
+    public bool Paired { get; init; }
+    public string Name { get; init; }
+    public string ImageUrl { get; init; }
 }

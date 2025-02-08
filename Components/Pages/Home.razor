@@ -1,13 +1,16 @@
 ﻿@page "/"
 @rendermode InteractiveServer
 
-@using Example.Models
+@using Match.Models
+@using Match.Services
+
+@inject IGameService GameService
 
 <PageTitle>Match</PageTitle>
 
 <div class="max-w-2xl">
   <div class="cards">
-      @foreach (var item in items)
+      @foreach (var item in state.Cards)
       {
           <div @onclick="() => FlipCard(item)" class="@GetCardClasses(item)">
             <div class="back"></div>
@@ -16,7 +19,7 @@
       }
   </div>
 
-  @if(winner) {
+  @if(state.Winner) {
     <div class="fixed inset-0 z-50 bg-white bg-opacity-25 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="relative z-50 bg-white rounded-lg shadow-xl w-full max-w-sm p-6 transform transition-all">
           <div class="flex flex-col items-center gap-4">
@@ -31,104 +34,11 @@
 </div>
 
 @code {
-    private Random random = new();
-    private bool animating = false;
-    private bool winner = false;
-    private List<Card> items;
-    private List<string> cardNumbers = new() { "one", "two", "three", "four" };
+    private Engine state;
 
     protected override void OnInitialized()
     {
-      items = NewCards();
-    }
-
-    private List<Card> NewCards()
-    {
-      var cards = cardNumbers.Distinct()
-        .SelectMany((name, index) => Enumerable.Range(1, 2)
-            .Select(i => new Card
-            {
-                Id = (index * 2) + i,
-                Name = name,
-                ImageUrl = $"/images/cards/{name}.png"
-            }))
-        .ToList();
-
-      return cards.OrderBy(x => random.Next()).ToList();
-    }
-
-    private void FlipCard(Card card)
-    {
-      if (animating) return;
-
-      Flip(card);
-      AttemptMatch();
-      CheckWinner();
-      StateHasChanged();
-
-      if (animating) {
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(1000);
-            UnFlip();
-            await InvokeAsync(StateHasChanged);
-        });
-      }
-    }
-
-    private void CheckWinner()
-    {
-      var pairedCards = items.Where(card => card.Paired).ToList();
-
-      if (pairedCards.Count == 8) {
-        winner = true;
-      }
-    }
-
-    private void UnFlip()
-    {
-      animating = false;
-
-      foreach (var item in items)
-      {
-        item.Flipped = false;
-      }
-    }
-
-    private void Flip(Card card)
-    {
-        foreach (var item in items)
-        {
-            if (card.Id == item.Id) {
-              card.Flipped = true;
-            }
-        }
-    }
-
-    private void AttemptMatch()
-    {
-      var flippedCards = items.Where(card => card.Flipped).ToList();
-
-      if (flippedCards.Count != 2) {
-        return;
-      }
-
-      var one = flippedCards[0];
-      var two = flippedCards[1];
-
-      if (one.Name == two.Name) {
-        foreach (var item in items)
-        {
-            if (one.Name == item.Name) {
-              one.Paired = true;
-              one.Flipped = false;
-              two.Paired = true;
-              two.Flipped = false;
-            }
-        }
-      } else {
-        animating = true;
-      }
+      state = GameService.NewGame();
     }
 
     private string GetCardClasses(Card card)
@@ -143,9 +53,28 @@
       return $"background-image: url({card.ImageUrl})";
     }
 
+    private void UnFlip(Engine currentState)
+    {
+      state = GameService.UnFlip(currentState);
+    }
+
+    private void FlipCard(Card card)
+    {
+      state = GameService.FlipCard(state, card);
+      StateHasChanged();
+
+      if (state.Animating) {
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(1000);
+            UnFlip(state);
+            await InvokeAsync(StateHasChanged);
+        });
+      }
+    }
+
     private void Restart()
     {
-      items = NewCards();
-      winner = false;
+      state = GameService.NewGame();
     }
 }
