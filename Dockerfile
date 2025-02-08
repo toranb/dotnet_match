@@ -14,6 +14,7 @@ COPY --from=build /app .
 
 ENV ASPNETCORE_URLS=http://+:8080
 ENV UseWebSocketHandler=true
+ENV PROTECTION_DIR="/data"
 EXPOSE 8080
 
 ENTRYPOINT ["dotnet", "Match.dll"]

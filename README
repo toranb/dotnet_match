@@ -1,0 +1,10 @@
+git clone ... Match
+
+export PROTECTION_DIR=/Users/username/Match/keys
+export DOTNET_KEYS=835ca1fd-f1cd-490d-9160-1503e4d0cf0e
+
+fly volume create data -r ord
+
+fly secrets set DOTNET_KEYS=835ca1fd-f1cd-490d-9160-1503e4d0cf0e
+fly secrets list
+fly deploy

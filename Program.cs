@@ -1,5 +1,6 @@
 using Match.Components;
 using Match.Services;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +9,16 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddScoped<IGameService, GameService>();
+
+builder.Configuration.AddEnvironmentVariables();
+var keyPath = builder.Configuration["PROTECTION_DIR"];
+var keyString = builder.Configuration["DOTNET_KEYS"];
+if (string.IsNullOrEmpty(keyString) || string.IsNullOrEmpty(keyPath))
+{
+    throw new InvalidOperationException("DOTNET_KEYS environment variable is required.");
+}
+var protectionPath = Path.Combine(keyPath, keyString);
+builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(protectionPath));
 
 var app = builder.Build();
 
