@@ -8,7 +8,7 @@
 
 <PageTitle>Match</PageTitle>
 
-<div class="max-w-2xl">
+<div class="max-w-xs md:max-w-lg">
   <div class="cards">
       @foreach (var item in state.Cards)
       {
@@ -61,7 +61,6 @@
     private void FlipCard(Card card)
     {
       state = GameService.FlipCard(state, card);
-      StateHasChanged();
 
       if (state.Animating) {
         _ = Task.Run(async () =>

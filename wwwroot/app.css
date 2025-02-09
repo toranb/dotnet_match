@@ -2,12 +2,18 @@ html {
   color: white;
   background: rgb(147,209,245);
 }
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+}
 .cards .card {
   position: relative;
-  display: inline-block;
   width: 100px;
   height: 150px;
-  margin: 1em 2em;
+  flex-shrink: 0;
 }
 .cards .card .front,
 .cards .card .back {
